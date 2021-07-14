@@ -1,6 +1,8 @@
 'use strict';
 
 console.log("OK");
+const CHRHEIGHT =9;                //キャラの高さ
+const CHRWIDTH  =8;                //キャラの幅
 const FONT      = "48px monospace";//使用フォント
 const HEIGHT    =120;              //仮想画面サイズ高さ
 const WIDTH     =128;              //仮想画面サイズ幅
@@ -15,7 +17,13 @@ let gFrame=0;                 //内部カウンタ
 let gWidth;                   //実画面の幅
 let gHeight;                  //実画面の高さ
 let gImgMap;                  //マップ画像
+let gImgPlayer;               //プレイヤー画像
+let gPlayerX=10;               //プレイヤー座標X
+let gPlayerY=5;               //プレイヤー座標Y
 let gScreen;                  //仮想画面
+
+const gFileMap="img/map.png";
+const gFilePlayer="img/player.png";
 
 
 //マップ32*32
@@ -57,13 +65,22 @@ const	gMap = [
 function DrawMain(){
 
   const g=gScreen.getContext("2d");  //仮想画面の2D描画コンテキストを取得
-  for(let y=0;y<32;y++){
-    for(let x=0;x<64;x++){
-      DrawTile(g,x*TILESIZE,y*TILESIZE,gMap[y*MAP_WIDTH+x]);
+  for(let y=0;y<20;y++){
+    for(let x=0;x<20;x++){
+
+      let px=gPlayerX+x;
+      let py=gPlayerY+y;
+      DrawTile(g,x*TILESIZE,y*TILESIZE,gMap[py*MAP_WIDTH+px]);
     }
   }
-  g.font=FONT;                       //文字フォント設定
-  g.fillText("hello world"+gFrame,0,gFrame/10);//文字描画
+
+  g.drawImage(gImgPlayer,
+               CHRWIDTH, 0, CHRWIDTH, CHRHEIGHT,
+              WIDTH/2, HEIGHT/2,CHRWIDTH,CHRHEIGHT);//プレイヤー画像描画
+  // g.drawImage(gImgPlayer,0,gFrame/10);//プレイヤー画像描画
+
+  // g.font=FONT;                       //文字フォント設定
+  // g.fillText("hello world"+gFrame,0,gFrame/10);//文字描画
   // console.log("a");  
 }
 
@@ -75,6 +92,14 @@ function DrawTile(g,x,y,idx){
 
 }
   
+function LoadImage(){
+
+  gImgMap       =new Image();
+  gImgMap.src   =gFileMap;   //マップ画像読み込み
+  gImgPlayer    =new Image();
+  gImgPlayer.src=gFilePlayer;//プレイヤー画像読み込み
+
+}
 
 function WmPaint(){
 
@@ -110,9 +135,22 @@ function WmTimer(){
   WmPaint();
 }
 
+//キー入力(DOWN)イベント
+window.onkeydown=function(ev){
+  let cc=ev.keyCode;//keyCodeは非推奨
+  let c=ev.key;
+  console.log("キーボードの "+c+" が押されました。");
+
+  if(c=="ArrowLeft") gPlayerX--;//左
+  if(c=="ArrowUp") gPlayerY--;//上
+  if(c=="ArrowRight") gPlayerX++;//右
+  if(c=="ArrowDown") gPlayerY++;//下
+}
+
+//ブラウザ起動イベント
 window.onload=function(){
-  gImgMap=new Image();
-  gImgMap.src="img/map.png";//マップ画像読み込み
+
+  LoadImage();
 
   gScreen=document.createElement("canvas");//仮想画面を作成
   gScreen.width=WIDTH;                     //仮想画面の幅を設定
