@@ -1,17 +1,19 @@
 'use strict';
 
 console.log("OK");
-const CHRHEIGHT =9;                //キャラの高さ
-const CHRWIDTH  =8;                //キャラの幅
-const FONT      = "48px monospace";//使用フォント
-const HEIGHT    =120;              //仮想画面サイズ高さ
-const WIDTH     =128;              //仮想画面サイズ幅
-const MAP_HEIGHT=32;               //マップ高さ
-const MAP_WIDTH=32;                //マップ幅
-const SMOOTH    =0;                //補間処理
-const TILECOLUMN=4;                //タイル桁数
-const TILEROW   =4;                //タイル行数
-const TILESIZE  =8;                //タイルサイズ(ドット)
+const CHRHEIGHT =9;                 //キャラの高さ
+const CHRWIDTH  =8;                 //キャラの幅
+const FONT      = "12px monospace"; //使用フォント
+const FONTSTYLE ="#ffffff";        //文字色
+const HEIGHT    =120;               //仮想画面サイズ高さ
+const WIDTH     =128;               //仮想画面サイズ幅
+const MAP_HEIGHT=32;                //マップ高さ
+const MAP_WIDTH=32;                 //マップ幅
+const SMOOTH    =0;                 //補間処理
+const TILECOLUMN=4;                 //タイル桁数
+const TILEROW   =4;                 //タイル行数
+const TILESIZE  =8;                 //タイルサイズ(ドット)
+const WNDSTYLE  ="rgba(0,0,0,0.75)";//ウィンドウの色
 
 let gFrame=0;                 //内部カウンタ
 let gWidth;                   //実画面の幅
@@ -28,7 +30,7 @@ const gFilePlayer="img/player.png";
 
 //マップ32*32
 const	gMap = [
-  7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 3, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 3, 3, 7, 7, 7, 7, 7, 7, 7, 7, 7, 6, 6, 3, 6, 3, 6, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -65,11 +67,13 @@ const	gMap = [
 function DrawMain(){
 
   const g=gScreen.getContext("2d");  //仮想画面の2D描画コンテキストを取得
-  for(let y=0;y<20;y++){
-    for(let x=0;x<20;x++){
+  for(let dy=-7;dy<=7;dy++){
+    let y=dy+7;
+    let py=(gPlayerY+dy+MAP_HEIGHT)%MAP_HEIGHT;
 
-      let px=gPlayerX+x;
-      let py=gPlayerY+y;
+    for(let dx=-8;dx<=8;dx++){
+      let x=dx+8;
+      let px=(gPlayerX+dx+MAP_WIDTH)%MAP_WIDTH;
       DrawTile(g,x*TILESIZE-TILESIZE/2,y*TILESIZE,gMap[py*MAP_WIDTH+px]);
     }
   }
@@ -83,9 +87,13 @@ function DrawMain(){
               WIDTH/2-CHRWIDTH/2, HEIGHT/2-CHRHEIGHT+TILESIZE/2,CHRWIDTH,CHRHEIGHT);//プレイヤー画像描画
   // g.drawImage(gImgPlayer,0,gFrame/10);//プレイヤー画像描画
 
-  // g.font=FONT;                       //文字フォント設定
-  // g.fillText("hello world"+gFrame,0,gFrame/10);//文字描画
-  // console.log("a");  
+
+  g.fillStyle=WNDSTYLE;              //ウィンドウの色
+  g.fillRect(20,103,105,15);  
+  g.font=FONT;                       //文字フォント設定
+  g.fillStyle=FONTSTYLE;             //文字色
+  g.fillText("x="+gPlayerX + " y="+gPlayerY,25,115);//文字描画
+  // console.log("a");
 }
 
 function DrawTile(g,x,y,idx){
