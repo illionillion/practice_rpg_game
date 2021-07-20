@@ -10,6 +10,8 @@ const WIDTH     =128;               //仮想画面サイズ幅
 const MAP_HEIGHT=32;                //マップ高さ
 const MAP_WIDTH=32;                 //マップ幅
 const SMOOTH    =0;                 //補間処理
+const START_X   =15;                //スタート開始位置X
+const START_Y   =17;                //スタート開始位置Y
 const TILECOLUMN=4;                 //タイル桁数
 const TILEROW   =4;                 //タイル行数
 const TILESIZE  =8;                 //タイルサイズ(ドット)
@@ -20,8 +22,8 @@ let gWidth;                   //実画面の幅
 let gHeight;                  //実画面の高さ
 let gImgMap;                  //マップ画像
 let gImgPlayer;               //プレイヤー画像
-let gPlayerX=10;               //プレイヤー座標X
-let gPlayerY=5;               //プレイヤー座標Y
+let gPlayerX=START_X*TILESIZE;//プレイヤー座標X
+let gPlayerY=START_Y*TILESIZE;//プレイヤー座標Y
 let gScreen;                  //仮想画面
 
 const gFileMap="img/map.png";
@@ -67,13 +69,19 @@ const	gMap = [
 function DrawMain(){
 
   const g=gScreen.getContext("2d");  //仮想画面の2D描画コンテキストを取得
+  
+  let mx=Math.floor(gPlayerX/TILESIZE);
+  let my=Math.floor(gPlayerY/TILESIZE);
+  
+  
   for(let dy=-7;dy<=7;dy++){
     let y=dy+7;
-    let py=(gPlayerY+dy+MAP_HEIGHT)%MAP_HEIGHT;
-
+    let ty=my+dy;                     //タイル座標Y
+    let py=(ty+MAP_HEIGHT)%MAP_HEIGHT;//ループ後タイル座標Y
     for(let dx=-8;dx<=8;dx++){
       let x=dx+8;
-      let px=(gPlayerX+dx+MAP_WIDTH)%MAP_WIDTH;
+      let tx=mx+dx;                   //タイル座標X
+      let px=(tx+MAP_WIDTH)%MAP_WIDTH;//ループ後タイル座標X
       DrawTile(g,x*TILESIZE-TILESIZE/2,y*TILESIZE,gMap[py*MAP_WIDTH+px]);
     }
   }
@@ -92,7 +100,7 @@ function DrawMain(){
   g.fillRect(20,103,105,15);  
   g.font=FONT;                       //文字フォント設定
   g.fillStyle=FONTSTYLE;             //文字色
-  g.fillText("x="+gPlayerX + " y="+gPlayerY,25,115);//文字描画
+  g.fillText("x="+gPlayerX + " y="+gPlayerY+" m="+gMap[my*MAP_WIDTH+mx],25,115);//文字描画
   // console.log("a");
 }
 
@@ -157,6 +165,12 @@ window.onkeydown=function(ev){
   if(c=="ArrowUp") gPlayerY--;//上
   if(c=="ArrowRight") gPlayerX++;//右
   if(c=="ArrowDown") gPlayerY++;//下
+
+  //マップループ処理
+  gPlayerX+=(MAP_WIDTH*TILESIZE);
+  gPlayerX%=(MAP_WIDTH*TILESIZE);
+  gPlayerY+=(MAP_HEIGHT*TILESIZE);
+  gPlayerY%=(MAP_HEIGHT*TILESIZE);
 }
 
 //ブラウザ起動イベント
