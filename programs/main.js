@@ -19,13 +19,17 @@ const TILEROW   =4;                 //タイル行数
 const TILESIZE  =8;                 //タイルサイズ(ドット)
 const WNDSTYLE  ="rgba(0,0,0,0.75)";//ウィンドウの色
 
+const gKey=new Uint8Array(0x100);//キー入力バッファ
+
 let gFrame=0;                 //内部カウンタ
-let gWidth;                   //実画面の幅
 let gHeight;                  //実画面の高さ
+let gWidth;                   //実画面の幅
+let gMoveX=0;                 //移動量X
+let gMoveY=0;                 //移動量Y
 let gImgMap;                  //マップ画像
 let gImgPlayer;               //プレイヤー画像
-let gPlayerX=START_X*TILESIZE;//プレイヤー座標X
-let gPlayerY=START_Y*TILESIZE;//プレイヤー座標Y
+let gPlayerX=START_X*TILESIZE+TILESIZE/2;//プレイヤー座標X
+let gPlayerY=START_Y*TILESIZE+TILESIZE/2;//プレイヤー座標Y
 let gScreen;                  //仮想画面
 
 const gFileMap="img/map.png";
@@ -124,6 +128,28 @@ function LoadImage(){
 
 }
 
+//フィールド進行処理
+function TickField(){
+  
+  if(gMoveX !=0 || gMoveY !=0){}    //移動中の場合
+  else if(gKey[37])gMoveX=-TILESIZE;//左
+  else if(gKey[38])gMoveY=-TILESIZE;//上
+  else if(gKey[39])gMoveX=TILESIZE; //右
+  else if(gKey[40])gMoveY=TILESIZE; //下
+
+  gPlayerX+=Math.sign(gMoveX);      //プレーヤー座標移動X
+  gPlayerY+=Math.sign(gMoveY);      //プレーヤー座標移動Y
+  gMoveX-=Math.sign(gMoveX);        //移動量消費X
+  gMoveY-=Math.sign(gMoveY);        //移動量消費Y
+
+  //マップループ処理
+  gPlayerX+=(MAP_WIDTH*TILESIZE);
+  gPlayerX%=(MAP_WIDTH*TILESIZE);
+  gPlayerY+=(MAP_HEIGHT*TILESIZE);
+  gPlayerY%=(MAP_HEIGHT*TILESIZE);
+
+}
+
 function WmPaint(){
 
   DrawMain();
@@ -155,6 +181,7 @@ function WmSize(){
 //タイマーイベント発生時の処理
 function WmTimer(){
   gFrame++;//内部カウンタを加算
+  TickField();//フィールド進行処理
   WmPaint();
 }
 
@@ -164,16 +191,21 @@ window.onkeydown=function(ev){
   let c=ev.key;
   console.log("キーボードの "+c+" が押されました。");
 
-  if(c=="ArrowLeft") gPlayerX--;//左
-  if(c=="ArrowUp") gPlayerY--;//上
-  if(c=="ArrowRight") gPlayerX++;//右
-  if(c=="ArrowDown") gPlayerY++;//下
+  gKey[cc]=1;
+  console.log(gKey);
 
-  //マップループ処理
-  gPlayerX+=(MAP_WIDTH*TILESIZE);
-  gPlayerX%=(MAP_WIDTH*TILESIZE);
-  gPlayerY+=(MAP_HEIGHT*TILESIZE);
-  gPlayerY%=(MAP_HEIGHT*TILESIZE);
+
+  // if(c=="ArrowLeft") gPlayerX--;//左
+  // if(c=="ArrowUp") gPlayerY--;//上
+  // if(c=="ArrowRight") gPlayerX++;//右
+  // if(c=="ArrowDown") gPlayerY++;//下
+
+  
+}
+
+window.onkeyup=function(ev){
+  gKey[ev.keyCode]=0;
+  console.log(gKey);
 }
 
 //ブラウザ起動イベント
