@@ -21,6 +21,7 @@ const WNDSTYLE  ="rgba(0,0,0,0.75)";//ウィンドウの色
 
 const gKey=new Uint8Array(0x100);//キー入力バッファ
 
+let gAngle=0;                 //プレイヤーの向き
 let gFrame=0;                 //内部カウンタ
 let gHeight;                  //実画面の高さ
 let gWidth;                   //実画面の幅
@@ -93,12 +94,14 @@ function DrawMain(){
     }
   }
 
-  g.fillStyle="#ff0000";
-  g.fillRect(0, HEIGHT/2-1,WIDTH,2);
-  g.fillRect(WIDTH/2-1,0,2,HEIGHT);
+  // // 中心線
+  // g.fillStyle="#ff0000";
+  // g.fillRect(0, HEIGHT/2-1,WIDTH,2);
+  // g.fillRect(WIDTH/2-1,0,2,HEIGHT);
 
+  //プレイヤー
   g.drawImage(gImgPlayer,
-              CHRWIDTH, 0, CHRWIDTH, CHRHEIGHT,
+              (gFrame>> 4 & 1)*CHRWIDTH, gAngle*CHRHEIGHT, CHRWIDTH, CHRHEIGHT,
               WIDTH/2-CHRWIDTH/2, HEIGHT/2-CHRHEIGHT+TILESIZE/2,CHRWIDTH,CHRHEIGHT);//プレイヤー画像描画
   // g.drawImage(gImgPlayer,0,gFrame/10);//プレイヤー画像描画
 
@@ -132,10 +135,26 @@ function LoadImage(){
 function TickField(){
   
   if(gMoveX !=0 || gMoveY !=0){}    //移動中の場合
-  else if(gKey[37])gMoveX=-TILESIZE;//左
-  else if(gKey[38])gMoveY=-TILESIZE;//上
-  else if(gKey[39])gMoveX=TILESIZE; //右
-  else if(gKey[40])gMoveY=TILESIZE; //下
+  else if(gKey[37]){gAngle=1; gMoveX=-TILESIZE;}//左
+  else if(gKey[38]){gAngle=3; gMoveY=-TILESIZE;}//上
+  else if(gKey[39]){gAngle=2; gMoveX=TILESIZE; }//右
+  else if(gKey[40]){gAngle=0; gMoveY=TILESIZE; }//下
+
+
+  //移動後のタイル座標判定
+  let mx=Math.floor((gPlayerX+gMoveX)/TILESIZE)//移動後のタイル座標X;
+  let my=Math.floor((gPlayerY+gMoveY)/TILESIZE)//移動後のタイル座標X;
+  mx+=MAP_WIDTH                     //マップループ処理X
+  mx%=MAP_WIDTH                     //マップループ処理X
+  my+=MAP_HEIGHT                    //マップループ処理Y
+  my%=MAP_HEIGHT                    //マップループ処理Y
+  let m=gMap[my*MAP_WIDTH+mx];      //タイル番号
+  if(m<3){                          //侵入不可能地形の場合
+    gMoveX=0;                       //移動禁止X
+    gMoveY=0;                       //移動禁止Y
+    console.log('移動できません');
+    console.log('m='+m);
+  }
 
   gPlayerX+=Math.sign(gMoveX);      //プレーヤー座標移動X
   gPlayerY+=Math.sign(gMoveY);      //プレーヤー座標移動Y
