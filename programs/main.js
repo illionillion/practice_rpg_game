@@ -7,10 +7,12 @@ const FONT      = "12px monospace"; //使用フォント
 const FONTSTYLE ="#ffffff";        //文字色
 const HEIGHT    =120;               //仮想画面サイズ高さ
 const WIDTH     =128;               //仮想画面サイズ幅
+const INTERVAL  =33;                //フレーム呼び出し間隔
 const MAP_HEIGHT=32;                //マップ高さ
 const MAP_WIDTH=32;                 //マップ幅
 const SCR_HEIGHT=8;                 //画面タイルサイズ半分の高さ
 const SCR_WIDTH =8;                 //画面タイルサイズの半分の幅
+const SCROLL    =1;                 //スクロール速度
 const SMOOTH    =0;                 //補間処理
 const START_X   =15;                //スタート開始位置X
 const START_Y   =17;                //スタート開始位置Y
@@ -25,6 +27,7 @@ let gAngle=0;                 //プレイヤーの向き
 let gFrame=0;                 //内部カウンタ
 let gHeight;                  //実画面の高さ
 let gWidth;                   //実画面の幅
+let gMessage=null;            //表示メッセージ
 let gMoveX=0;                 //移動量X
 let gMoveY=0;                 //移動量Y
 let gImgMap;                  //マップ画像
@@ -105,13 +108,25 @@ function DrawMain(){
               WIDTH/2-CHRWIDTH/2, HEIGHT/2-CHRHEIGHT+TILESIZE/2,CHRWIDTH,CHRHEIGHT);//プレイヤー画像描画
   // g.drawImage(gImgPlayer,0,gFrame/10);//プレイヤー画像描画
 
+  DrawMessage(g);                  //メッセージ描画 
 
-  g.fillStyle=WNDSTYLE;              //ウィンドウの色
-  g.fillRect(20,103,105,15);  
-  g.font=FONT;                       //文字フォント設定
-  g.fillStyle=FONTSTYLE;             //文字色
-  g.fillText("x="+gPlayerX + " y="+gPlayerY+" m="+gMap[my*MAP_WIDTH+mx],25,115);//文字描画
+  g.fillStyle=WNDSTYLE;            //ウィンドウの色
+  g.fillRect(20,3,105,15);         //短形描画
+
+  g.font=FONT;                      //文字フォント設定
+  g.fillStyle=FONTSTYLE;            //文字色
+  g.fillText("x="+gPlayerX + " y="+gPlayerY+" m="+gMap[my*MAP_WIDTH+mx],25,15);//文字描画
   // console.log("a");
+}
+
+function DrawMessage(g){
+  g.fillStyle=WNDSTYLE;            //ウィンドウの色
+  g.fillRect(4,84,120,30);         //短形描画
+
+  g.font=FONT;                     //文字フォント設定
+  g.fillStyle=FONTSTYLE;           //文字色
+  
+  g.fillText(gMessage,6,96);
 }
 
 function DrawTile(g,x,y,idx){
@@ -128,6 +143,18 @@ function LoadImage(){
   gImgMap.src   =gFileMap;   //マップ画像読み込み
   gImgPlayer    =new Image();
   gImgPlayer.src=gFilePlayer;//プレイヤー画像読み込み
+
+}
+
+//IE対応
+function Sign(val){
+  if(val==0){
+    return(0);
+  }
+  if(val<0){
+    return(-1);
+  }
+  return(1);
 
 }
 
@@ -149,6 +176,7 @@ function TickField(){
   my+=MAP_HEIGHT                    //マップループ処理Y
   my%=MAP_HEIGHT                    //マップループ処理Y
   let m=gMap[my*MAP_WIDTH+mx];      //タイル番号
+
   if(m<3){                          //侵入不可能地形の場合
     gMoveX=0;                       //移動禁止X
     gMoveY=0;                       //移動禁止Y
@@ -156,10 +184,18 @@ function TickField(){
     console.log('m='+m);
   }
 
-  gPlayerX+=Math.sign(gMoveX);      //プレーヤー座標移動X
-  gPlayerY+=Math.sign(gMoveY);      //プレーヤー座標移動Y
-  gMoveX-=Math.sign(gMoveX);        //移動量消費X
-  gMoveY-=Math.sign(gMoveY);        //移動量消費Y
+  if(m==8||m==9){
+    gMessage="魔王を倒して！";
+  }
+  if(m==10||m==11){
+    gMessage="西の果てにも村があります";
+  }
+
+  //signはIEでは動かない
+  gPlayerX+=Sign(gMoveX)*SCROLL;//プレーヤー座標移動X
+  gPlayerY+=Sign(gMoveY)*SCROLL;//プレーヤー座標移動Y
+  gMoveX-=Sign(gMoveX)*SCROLL;  //移動量消費X
+  gMoveY-=Sign(gMoveY)*SCROLL;  //移動量消費Y
 
   //マップループ処理
   gPlayerX+=(MAP_WIDTH*TILESIZE);
@@ -213,7 +249,6 @@ window.onkeydown=function(ev){
   gKey[cc]=1;
   console.log(gKey);
 
-
   // if(c=="ArrowLeft") gPlayerX--;//左
   // if(c=="ArrowUp") gPlayerY--;//上
   // if(c=="ArrowRight") gPlayerX++;//右
@@ -237,6 +272,6 @@ window.onload=function(){
   gScreen.height=HEIGHT;                   //仮想画面の高さを設定
   WmSize();                                //画面サイズ初期化
   window.addEventListener("resize",function(){WmSize()});//ブラウザサイズ変更時に読み込まれる
-  setInterval(function(){WmTimer()},33);   //33ms間隔でWmTimer()を呼び出す。
+  setInterval(function(){WmTimer()},INTERVAL);   //33ms間隔でWmTimer()を呼び出す。
 
 }
