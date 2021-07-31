@@ -4,7 +4,7 @@ console.log("OK");
 const CHRHEIGHT =9;                 //キャラの高さ
 const CHRWIDTH  =8;                 //キャラの幅
 const FONT      = "12px monospace"; //使用フォント
-const FONTSTYLE ="#ffffff";        //文字色
+const FONTSTYLE ="#ffffff";         //文字色
 const HEIGHT    =120;               //仮想画面サイズ高さ
 const WIDTH     =128;               //仮想画面サイズ幅
 const INTERVAL  =33;                //フレーム呼び出し間隔
@@ -12,7 +12,7 @@ const MAP_HEIGHT=32;                //マップ高さ
 const MAP_WIDTH=32;                 //マップ幅
 const SCR_HEIGHT=8;                 //画面タイルサイズ半分の高さ
 const SCR_WIDTH =8;                 //画面タイルサイズの半分の幅
-const SCROLL    =1;                 //スクロール速度
+let   SCROLL    =1;                 //スクロール速度
 const SMOOTH    =0;                 //補間処理
 const START_X   =15;                //スタート開始位置X
 const START_Y   =17;                //スタート開始位置Y
@@ -27,7 +27,8 @@ let gAngle=0;                 //プレイヤーの向き
 let gFrame=0;                 //内部カウンタ
 let gHeight;                  //実画面の高さ
 let gWidth;                   //実画面の幅
-let gMessage=null;            //表示メッセージ
+let gMessage1=null;           //表示メッセージ1
+let gMessage2=null;           //表示メッセージ2
 let gMoveX=0;                 //移動量X
 let gMoveY=0;                 //移動量Y
 let gImgMap;                  //マップ画像
@@ -119,14 +120,25 @@ function DrawMain(){
   // console.log("a");
 }
 
+//メッセージ描画
 function DrawMessage(g){
+
+  if(!gMessage1){//メッセージ内容が存在しない場合
+    return;
+  }
+
   g.fillStyle=WNDSTYLE;            //ウィンドウの色
   g.fillRect(4,84,120,30);         //短形描画
 
   g.font=FONT;                     //文字フォント設定
   g.fillStyle=FONTSTYLE;           //文字色
   
-  g.fillText(gMessage,6,96);
+  g.fillText(gMessage1,6,96);      //メッセージ1行目描画
+  if(gMessage2){
+    g.fillText(gMessage2,6,110);      //メッセージ2行目描画
+
+  }
+
 }
 
 function DrawTile(g,x,y,idx){
@@ -145,6 +157,11 @@ function LoadImage(){
   gImgPlayer.src=gFilePlayer;//プレイヤー画像読み込み
 
 }
+// function SetMessage(v1,v2=null)//IE未対応
+function SetMessage(v1,v2){
+  gMessage1=v1;
+  gMessage2=v2;
+}
 
 //IE対応
 function Sign(val){
@@ -161,6 +178,7 @@ function Sign(val){
 //フィールド進行処理
 function TickField(){
   
+  // if(gKey[16]){SCROLL=2;}
   if(gMoveX !=0 || gMoveY !=0){}    //移動中の場合
   else if(gKey[37]){gAngle=1; gMoveX=-TILESIZE;}//左
   else if(gKey[38]){gAngle=3; gMoveY=-TILESIZE;}//上
@@ -184,12 +202,31 @@ function TickField(){
     console.log('m='+m);
   }
 
-  if(m==8||m==9){
-    gMessage="魔王を倒して！";
+  if(Math.abs(gMoveX)+Math.abs(gMoveY)==SCROLL){
+    //マス目移動が終わる直前
+    if(m==8||m==9){//城
+      SetMessage("魔王を倒して！",null);
+    }
+    if(m==10||m==11){//街
+      SetMessage("西の果てにも","村があります");
+    }
+    if(m==12){//村
+      SetMessage("カギは、","洞窟にあります");
+    }
+    if(m==13){//洞窟
+      SetMessage("カギはを手に入れた",null);
+    }
+    if(m==14){//扉 
+      gPlayerY-=TILESIZE;//1マス上へ移動
+      SetMessage("カギが必要です",null);
+      // SetMessage("扉が開いた",null);
+    }  
+    if(m==15){//ボス 
+      SetMessage("魔王を倒し、","世界に平和が訪れた");
+    }
   }
-  if(m==10||m==11){
-    gMessage="西の果てにも村があります";
-  }
+
+
 
   //signはIEでは動かない
   gPlayerX+=Sign(gMoveX)*SCROLL;//プレーヤー座標移動X
@@ -244,11 +281,13 @@ function WmTimer(){
 window.onkeydown=function(ev){
   let cc=ev.keyCode;//keyCodeは非推奨
   let c=ev.key;
-  console.log("キーボードの "+c+" が押されました。");
+  console.log("キーボードの "+c+" が押されました。\nキーコード"+cc);
 
   gKey[cc]=1;
+  // if(gKey[16]){SCROLL=2;}
   console.log(gKey);
 
+  gMessage1=null;
   // if(c=="ArrowLeft") gPlayerX--;//左
   // if(c=="ArrowUp") gPlayerY--;//上
   // if(c=="ArrowRight") gPlayerX++;//右
@@ -259,6 +298,7 @@ window.onkeydown=function(ev){
 
 window.onkeyup=function(ev){
   gKey[ev.keyCode]=0;
+  if(!gKey[16]){SCROLL=1;}
   console.log(gKey);
 }
 
