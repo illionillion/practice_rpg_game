@@ -12,8 +12,9 @@ const MAP_HEIGHT=32;                //マップ高さ
 const MAP_WIDTH=32;                 //マップ幅
 const SCR_HEIGHT=8;                 //画面タイルサイズ半分の高さ
 const SCR_WIDTH =8;                 //画面タイルサイズの半分の幅
-let   SCROLL    =1;                 //スクロール速度
+let   SCROLL    =4;                 //スクロール速度
 const SMOOTH    =0;                 //補間処理
+const START_HP  =20;                //開始HP
 const START_X   =15;                //スタート開始位置X
 const START_Y   =17;                //スタート開始位置Y
 const TILECOLUMN=4;                 //タイル桁数
@@ -24,6 +25,10 @@ const WNDSTYLE  ="rgba(0,0,0,0.75)";//ウィンドウの色
 const gKey=new Uint8Array(0x100);//キー入力バッファ
 
 let gAngle=0;                 //プレイヤーの向き
+let gEx=0;                    //プレイヤーの経験値
+let gHP=START_HP;             //プレイヤーのHP
+let gMHP=START_HP;            //プレイヤーの最大HP
+let gLv=1;                    //プレイヤーのレベル
 let gFrame=0;                 //内部カウンタ
 let gHeight;                  //実画面の高さ
 let gWidth;                   //実画面の幅
@@ -31,6 +36,7 @@ let gMessage1=null;           //表示メッセージ1
 let gMessage2=null;           //表示メッセージ2
 let gMoveX=0;                 //移動量X
 let gMoveY=0;                 //移動量Y
+let gItem=0;                  //所持アイテム
 let gImgMap;                  //マップ画像
 let gImgPlayer;               //プレイヤー画像
 let gPlayerX=START_X*TILESIZE+TILESIZE/2;//プレイヤー座標X
@@ -109,15 +115,20 @@ function DrawMain(){
               WIDTH/2-CHRWIDTH/2, HEIGHT/2-CHRHEIGHT+TILESIZE/2,CHRWIDTH,CHRHEIGHT);//プレイヤー画像描画
   // g.drawImage(gImgPlayer,0,gFrame/10);//プレイヤー画像描画
 
-  DrawMessage(g);                  //メッセージ描画 
-
+  //ステータスウィンドウ
   g.fillStyle=WNDSTYLE;            //ウィンドウの色
-  g.fillRect(20,3,105,15);         //短形描画
+  g.fillRect(2,2,44,37);         //短形描画
 
-  g.font=FONT;                      //文字フォント設定
-  g.fillStyle=FONTSTYLE;            //文字色
-  g.fillText("x="+gPlayerX + " y="+gPlayerY+" m="+gMap[my*MAP_WIDTH+mx],25,15);//文字描画
-  // console.log("a");
+  DrawMessage(g);                  //メッセージ描画 
+  DrawStatus(g);                  //ステータス描画 
+
+  // g.fillStyle=WNDSTYLE;            //ウィンドウの色
+  // g.fillRect(20,3,105,15);         //短形描画
+
+  // g.font=FONT;                      //文字フォント設定
+  // g.fillStyle=FONTSTYLE;            //文字色
+  // g.fillText("x="+gPlayerX + " y="+gPlayerY+" m="+gMap[my*MAP_WIDTH+mx],25,15);//文字描画
+  // // console.log("a");
 }
 
 //メッセージ描画
@@ -129,15 +140,23 @@ function DrawMessage(g){
 
   g.fillStyle=WNDSTYLE;            //ウィンドウの色
   g.fillRect(4,84,120,30);         //短形描画
-
   g.font=FONT;                     //文字フォント設定
   g.fillStyle=FONTSTYLE;           //文字色
-  
   g.fillText(gMessage1,6,96);      //メッセージ1行目描画
   if(gMessage2){
     g.fillText(gMessage2,6,110);      //メッセージ2行目描画
-
   }
+
+}
+
+//ステータス描画
+function DrawStatus(g){
+
+  g.font=FONT;                     //文字フォント設定
+  g.fillStyle=FONTSTYLE;           //文字色
+  g.fillText("Lv "+gLv,4,13);      //Lv
+  g.fillText("HP "+gHP,4,25);      //HP
+  g.fillText("Ex "+gEx,4,37);      //Ex
 
 }
 
@@ -179,7 +198,7 @@ function Sign(val){
 function TickField(){
   
   // if(gKey[16]){SCROLL=2;}
-  if(gMoveX !=0 || gMoveY !=0){}    //移動中の場合
+  if(gMoveX !=0 || gMoveY !=0 || gMessage1){}   //移動中またはメッセージ表示中の場合
   else if(gKey[37]){gAngle=1; gMoveX=-TILESIZE;}//左
   else if(gKey[38]){gAngle=3; gMoveY=-TILESIZE;}//上
   else if(gKey[39]){gAngle=2; gMoveX=TILESIZE; }//右
@@ -214,15 +233,23 @@ function TickField(){
       SetMessage("カギは、","洞窟にあります");
     }
     if(m==13){//洞窟
+      gItem=1;//カギ入手
       SetMessage("カギはを手に入れた",null);
     }
     if(m==14){//扉 
-      gPlayerY-=TILESIZE;//1マス上へ移動
-      SetMessage("カギが必要です",null);
-      // SetMessage("扉が開いた",null);
+      if(gItem==0){
+        //カギを保持していない場合
+        gPlayerY-=TILESIZE;//1マス上へ移動
+        SetMessage("カギが必要です",null);
+      }else{
+        SetMessage("扉が開いた",null);
+      }
     }  
     if(m==15){//ボス 
       SetMessage("魔王を倒し、","世界に平和が訪れた");
+    }
+    if(Math.random()*8<1){//ランダムエンカウント
+      SetMessage("敵が現れた!",null);
     }
   }
 
@@ -282,7 +309,9 @@ window.onkeydown=function(ev){
   let cc=ev.keyCode;//keyCodeは非推奨
   let c=ev.key;
   console.log("キーボードの "+c+" が押されました。\nキーコード"+cc);
-
+  if(gKey[cc]!=0){
+    return;//既に押下中の場合(キーリピート)
+  }
   gKey[cc]=1;
   // if(gKey[16]){SCROLL=2;}
   console.log(gKey);
