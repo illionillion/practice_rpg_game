@@ -29,6 +29,8 @@ let gEx=0;                    //プレイヤーの経験値
 let gHP=START_HP;             //プレイヤーのHP
 let gMHP=START_HP;            //プレイヤーの最大HP
 let gLv=1;                    //プレイヤーのレベル
+let gCursor=0;                //カーソル位置
+let gEnemyType;               //敵種別
 let gFrame=0;                 //内部カウンタ
 let gHeight;                  //実画面の高さ
 let gWidth;                   //実画面の幅
@@ -93,12 +95,23 @@ function DrawFight(g){
   g.fillStyle="#000000";//背景色
   g.fillRect(0,0,WIDTH,HEIGHT);//画面全体を塗りつぶし
 
-  g.drawImage(gImgMonster,WIDTH/2,HEIGHT/2);
+  let w=gImgMonster.width/4;
+  let h=gImgMonster.height;
+
+  g.drawImage(gImgMonster,gEnemyType *w,0,w,h,Math.floor(WIDTH/2-w/2),Math.floor(HEIGHT/2-h/2),w,h);
   // gPhase=0;
+
+  DrawStatus(g);                  //ステータス描画
+  DrawMessage(g);                 //メッセージ描画
+  
+  if(gPhase==2){                  //戦闘フェーズがコマンド選択中の場合
+    g.fillText("⇒",6,96+14*gCursor);//カーソル描画
+  }
+
 }
 
-//マップ描画処理
-function DrawMap(g){
+//フィールド描画処理
+function DrawField(g){
 
   let mx=Math.floor(gPlayerX/TILESIZE);//プレイヤーのタイル座標X
   let my=Math.floor(gPlayerY/TILESIZE);//プレイヤーのタイル座標Y
@@ -127,23 +140,24 @@ function DrawMap(g){
               (gFrame>> 4 & 1)*CHRWIDTH, gAngle*CHRHEIGHT, CHRWIDTH, CHRHEIGHT,
               WIDTH/2-CHRWIDTH/2, HEIGHT/2-CHRHEIGHT+TILESIZE/2,CHRWIDTH,CHRHEIGHT);//プレイヤー画像描画
   // g.drawImage(gImgPlayer,0,gFrame/10);//プレイヤー画像描画
+
+  //ステータスウィンドウ
+  g.fillStyle=WNDSTYLE;          //ウィンドウの色
+  g.fillRect(2,2,44,37);         //短形描画
+
+  DrawStatus(g);                 //ステータス描画
+  DrawMessage(g);                //メッセージ描画 
+  
 }
 
 function DrawMain(){
 
   const g=gScreen.getContext("2d");  //仮想画面の2D描画コンテキストを取得
   if(gPhase==0){
-    DrawMap(g);                       //マップ描画
+    DrawField(g);                       //フィールド画面描画
   }else{
     DrawFight(g);
   }
-
-  //ステータスウィンドウ
-  g.fillStyle=WNDSTYLE;          //ウィンドウの色
-  g.fillRect(2,2,44,37);         //短形描画
-
-  DrawMessage(g);                //メッセージ描画 
-  DrawStatus(g);                 //ステータス描画 
 
   // g.fillStyle=WNDSTYLE;            //ウィンドウの色
   // g.fillRect(20,3,105,15);         //短形描画
@@ -272,6 +286,7 @@ function TickField(){
     }
     if(Math.random()*4<gEncounter[m]){//ランダムエンカウント
       gPhase=1;                       //敵出現フェーズ
+      gEnemyType=1;
       SetMessage("敵が現れた!",null);
     }
   }
@@ -339,10 +354,32 @@ window.onkeydown=function(ev){
   // if(gKey[16]){SCROLL=2;}
   console.log(gKey);
 
-  if(gPhase==1){
-    gPhase=0;
+  if(gPhase==1){//敵が現れた場合
+    gPhase=2;   //戦闘コマンド選択フェーズ
+    SetMessage("　戦う","　逃げる");
+    return;
+  }
+
+  if(gPhase==2){//戦闘コマンド選択の場合
+      
+    if(cc==13||cc==90){//13はEnterキー、90はZキー
+      SetMessage("敵を倒した！",null);
+      gPhase=3;
+
+    }else{
+      gCursor=1-gCursor;//カーソル移動
+    }
+
+    return;
+
+  }
+
+  if(gPhase==3){
+    gCursor=0;
+    gPhase=0;   //マップ移動フェーズ
     gHP-=5;
     gEx++;
+    
   }
 
   gMessage1=null;
