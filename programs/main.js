@@ -89,6 +89,35 @@ const	gMap = [
   7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 7, 7, 7, 7,
  ];
 
+//戦闘行動処理
+function Action(){
+
+  gPhase++;//フェーズ経過
+
+  if(gPhase==3){
+    SetMessage('敵の攻撃！',999+' のダメージ！');
+    return;
+  }
+
+  if(gCursor==0){//「戦う」選択肢
+    SetMessage("あなたの攻撃！",333+' のダメージ！');
+    return;
+  }
+
+  SetMessage('あなたは逃げ出した',null);
+  // gPhase=3;
+}
+
+//経験値加算
+function AddExp(val){
+  gEx+=val;//経験値加算
+
+  while(gLv*(gLv+1)*2<=gEx){//レベルアップ条件を満たしている場合
+    gLv++;//レベルアップ
+    gMHP+=4+Math.floor(Math.random()*3);//最大HP上昇4~6
+  }
+}
+
 //戦闘画面処理
 function DrawFight(g){
 
@@ -260,12 +289,15 @@ function TickField(){
   if(Math.abs(gMoveX)+Math.abs(gMoveY)==SCROLL){
     //マス目移動が終わる直前
     if(m==8||m==9){//城
+      gHP=gMHP;//HP全回復
       SetMessage("魔王を倒して！",null);
     }
     if(m==10||m==11){//街
+      gHP=gMHP;//HP全回復
       SetMessage("西の果てにも","村があります");
     }
     if(m==12){//村
+      gHP=gMHP;//HP全回復
       SetMessage("カギは、","洞窟にあります");
     }
     if(m==13){//洞窟
@@ -363,9 +395,7 @@ window.onkeydown=function(ev){
   if(gPhase==2){//戦闘コマンド選択の場合
       
     if(cc==13||cc==90){//13はEnterキー、90はZキー
-      SetMessage("敵を倒した！",null);
-      gPhase=3;
-
+      Action();//戦闘行動処理
     }else{
       gCursor=1-gCursor;//カーソル移動
     }
@@ -375,10 +405,14 @@ window.onkeydown=function(ev){
   }
 
   if(gPhase==3){
+    Action()
+    return;
+  }
+  if(gPhase==4){
     gCursor=0;
     gPhase=0;   //マップ移動フェーズ
     gHP-=5;
-    gEx++;
+    AddExp(gEnemyType+1);//経験値加算
     
   }
 
