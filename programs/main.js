@@ -1,6 +1,6 @@
 'use strict';
 
-console.log("OK");
+// console.log("OK");
 const CHRHEIGHT =9;                 //キャラの高さ
 const CHRWIDTH  =8;                 //キャラの幅
 const FONT      = "12px monospace"; //使用フォント

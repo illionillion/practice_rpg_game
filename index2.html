@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    *{
+      outline: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="main"></canvas>
+  <input type="button" onclick="right()" value="right">
+  <script>
+    let can;
+    let g;
+    let num=0;
+    let rightnum=0;
+    let win_x;
+    let win_y;
+    let black_block_x;
+    let black_block_y;
+    function draw(){
+      // console.log("a");
+      g.fillStyle="#fff";             //ウィンドウの色
+      g.fillRect(0,0,500,380);        //短形描画
+
+      black_block_x=win_x/10;
+      black_block_y=win_y/10;
+
+      for(let y=0;y<win_y;y++){
+        g.fillStyle="black";            //ウィンドウの色
+        g.fillRect(0,y,black_block_x,black_block_y);      //短形描画
+        
+      }
+      
+      // g.fillRect(20,num,105,15);      //短形描画
+      g.fillText("hello",rightnum,10);
+      num++;
+    }
+
+    function right(){
+      rightnum++;
+    }
+
+    window.onload=function(){
+      can=document.getElementById('main');
+      can.width="350";
+      win_x=can.width;
+      can.height="350";
+      win_y=can.height;
+      g=can.getContext("2d");
+
+      setInterval(() => {
+        draw();
+      }, 100);
+    }
+  </script>
+</body>
+</html>
