@@ -22,6 +22,8 @@ const TILEROW   =4;                 //タイル行数
 const TILESIZE  =8;                 //タイルサイズ(ドット)
 const WNDSTYLE  ="rgba(0,0,0,0.75)";//ウィンドウの色
 
+const gMonsterName=["スライム","うさぎ","ナイト","ドラゴン","魔王"]
+
 const gKey=new Uint8Array(0x100);//キー入力バッファ
 
 let gAngle=0;                 //プレイヤーの向き
@@ -94,18 +96,27 @@ function Action(){
 
   gPhase++;//フェーズ経過
 
-  if(gPhase==3){
-    SetMessage('敵の攻撃！',999+' のダメージ！');
+  if(gPhase===3){
+    SetMessage(gMonsterName[gEnemyType]+'の攻撃！',999+' のダメージ！');
+    gPhase=7;
     return;
   }
 
   if(gCursor==0){//「戦う」選択肢
     SetMessage("あなたの攻撃！",333+' のダメージ！');
+    gPhase=5;
     return;
   }
 
-  SetMessage('あなたは逃げ出した',null);
-  // gPhase=3;
+  if(Math.random()<0.5){//「逃げる」成功時
+    
+    SetMessage('あなたは逃げ出した',null);
+    gPhase=6;
+    return;
+  }
+
+  //「逃げる」失敗時
+  SetMessage('あなたは逃げ出した','しかし回り込まれた！');
 }
 
 //経験値加算
@@ -116,6 +127,12 @@ function AddExp(val){
     gLv++;//レベルアップ
     gMHP+=4+Math.floor(Math.random()*3);//最大HP上昇4~6
   }
+}
+
+function CommandFight(){
+  gPhase=2;   //戦闘コマンド選択フェーズ
+  gCursor=0;
+  SetMessage("　戦う","　逃げる");
 }
 
 //戦闘画面処理
@@ -182,7 +199,7 @@ function DrawField(g){
 function DrawMain(){
 
   const g=gScreen.getContext("2d");  //仮想画面の2D描画コンテキストを取得
-  if(gPhase==0){
+  if(gPhase<=1){
     DrawField(g);                       //フィールド画面描画
   }else{
     DrawFight(g);
@@ -286,26 +303,26 @@ function TickField(){
     console.log('m='+m);
   }
 
-  if(Math.abs(gMoveX)+Math.abs(gMoveY)==SCROLL){
+  if(Math.abs(gMoveX)+Math.abs(gMoveY)===SCROLL){
     //マス目移動が終わる直前
-    if(m==8||m==9){//城
+    if(m===8||m===9){//城
       gHP=gMHP;//HP全回復
       SetMessage("魔王を倒して！",null);
     }
-    if(m==10||m==11){//街
+    if(m===10||m===11){//街
       gHP=gMHP;//HP全回復
       SetMessage("西の果てにも","村があります");
     }
-    if(m==12){//村
+    if(m===12){//村
       gHP=gMHP;//HP全回復
       SetMessage("カギは、","洞窟にあります");
     }
-    if(m==13){//洞窟
+    if(m===13){//洞窟
       gItem=1;//カギ入手
       SetMessage("カギはを手に入れた",null);
     }
-    if(m==14){//扉 
-      if(gItem==0){
+    if(m===14){//扉 
+      if(gItem===0){
         //カギを保持していない場合
         gPlayerY-=TILESIZE;//1マス上へ移動
         SetMessage("カギが必要です",null);
@@ -386,15 +403,14 @@ window.onkeydown=function(ev){
   // if(gKey[16]){SCROLL=2;}
   console.log(gKey);
 
-  if(gPhase==1){//敵が現れた場合
-    gPhase=2;   //戦闘コマンド選択フェーズ
-    SetMessage("　戦う","　逃げる");
+  if(gPhase===1){//敵が現れた場合
+    CommandFight();//戦闘コマンド
     return;
   }
 
-  if(gPhase==2){//戦闘コマンド選択の場合
+  if(gPhase===2){//戦闘コマンド選択の場合
       
-    if(cc==13||cc==90){//13はEnterキー、90はZキー
+    if(cc===13||cc===90){//13はEnterキー、90はZキー
       Action();//戦闘行動処理
     }else{
       gCursor=1-gCursor;//カーソル移動
@@ -404,18 +420,35 @@ window.onkeydown=function(ev){
 
   }
 
-  if(gPhase==3){
+  if(gPhase===3){
     Action()
     return;
   }
-  if(gPhase==4){
+  if(gPhase===4){
+    CommandFight();//戦闘コマンド
+    return;
+  }
+  if(gPhase===5){
+    gPhase=6;
+    SetMessage("敵を倒した！！",null);
+    AddExp(gEnemyType+1);//経験値加算
+    return;
+  }
+  if(gPhase===6){
     gCursor=0;
     gPhase=0;   //マップ移動フェーズ
-    gHP-=5;
-    AddExp(gEnemyType+1);//経験値加算
-    
+    return;
   }
 
+  if(gPhase===7){
+    gPhase=8;
+    SetMessage('あなたは死亡した',null);
+    return;
+  }
+  if(gPhase===8){
+    SetMessage('GAMEOVER',null);
+    return;
+  }
   gMessage1=null;
   // if(c=="ArrowLeft") gPlayerX--;//左
   // if(c=="ArrowUp") gPlayerY--;//上
