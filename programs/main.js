@@ -42,6 +42,7 @@ let gMoveX=0;                 //移動量X
 let gMoveY=0;                 //移動量Y
 let gItem=0;                  //所持アイテム
 let gPhase=0;                 //戦闘フェーズ
+let gImgBoss;                 //ラスボス画像
 let gImgMap;                  //マップ画像
 let gImgMonster;              //モンスター画像
 let gImgPlayer;               //プレイヤー画像
@@ -49,6 +50,7 @@ let gPlayerX=START_X*TILESIZE+TILESIZE/2;//プレイヤー座標X
 let gPlayerY=START_Y*TILESIZE+TILESIZE/2;//プレイヤー座標Y
 let gScreen;                  //仮想画面
 
+const gFileBoss="img/boss.png";
 const gFileMap="img/map.png";
 const gFileMonster="img/monster.png";
 const gFilePlayer="img/player.png";
@@ -98,7 +100,7 @@ function Action(){
 
   if(gPhase===3){
     SetMessage(gMonsterName[gEnemyType]+'の攻撃！',999+' のダメージ！');
-    gPhase=7;
+    //gPhase=7;
     return;
   }
 
@@ -129,6 +131,13 @@ function AddExp(val){
   }
 }
 
+//敵出現処理
+function AppearEnemy(t){
+  gPhase=1;//敵出現フェーズ
+  gEnemyType=t;
+  SetMessage("敵が現れた!",null);
+}
+
 function CommandFight(){
   gPhase=2;   //戦闘コマンド選択フェーズ
   gCursor=0;
@@ -140,11 +149,19 @@ function DrawFight(g){
 
   g.fillStyle="#000000";//背景色
   g.fillRect(0,0,WIDTH,HEIGHT);//画面全体を塗りつぶし
+  
+  if(gPhase<=5){//敵が生存している場合
 
-  let w=gImgMonster.width/4;
-  let h=gImgMonster.height;
+    if(IsBoss()){//ラスボスの場合
+      g.drawImage(gImgBoss,WIDTH/2-gImgBoss.width/2,HEIGHT/2-gImgBoss.height/2);
+    }else{
+      let w=gImgMonster.width/4;
+      let h=gImgMonster.height;
 
-  g.drawImage(gImgMonster,gEnemyType *w,0,w,h,Math.floor(WIDTH/2-w/2),Math.floor(HEIGHT/2-h/2),w,h);
+      g.drawImage(gImgMonster,gEnemyType *w,0,w,h,Math.floor(WIDTH/2-w/2),Math.floor(HEIGHT/2-h/2),w,h);    
+    }
+
+  }
   // gPhase=0;
 
   DrawStatus(g);                  //ステータス描画
@@ -250,9 +267,15 @@ function DrawTile(g,x,y,idx){
   g.drawImage(gImgMap,ix,iy,TILESIZE,TILESIZE,x,y,TILESIZE,TILESIZE);//画像の縦*32,横*32
 
 }
+
+function IsBoss(){
+  // return(true);
+  return(gEnemyType===gMonsterName.length-1);
+}
   
 function LoadImage(){
 
+  gImgBoss=new Image();gImgBoss.src=gFileBoss;//ラスボス画像読み込み
   gImgMap=new Image();gImgMap.src=gFileMap;   //マップ画像読み込み
   gImgMonster=new Image();gImgMonster.src=gFileMonster;//モンスター画像読み込み
   gImgPlayer=new Image();gImgPlayer.src=gFilePlayer;//プレイヤー画像読み込み
@@ -331,12 +354,10 @@ function TickField(){
       }
     }  
     if(m==15){//ボス 
-      SetMessage("魔王を倒し、","世界に平和が訪れた");
+      AppearEnemy(gMonsterName.length-1);
     }
     if(Math.random()*4<gEncounter[m]){//ランダムエンカウント
-      gPhase=1;                       //敵出現フェーズ
-      gEnemyType=1;
-      SetMessage("敵が現れた!",null);
+      AppearEnemy(0);
     }
   }
 
@@ -435,6 +456,10 @@ window.onkeydown=function(ev){
     return;
   }
   if(gPhase===6){
+    if(IsBoss()&&gCursor===0){//敵がラスボスかつ「戦う」選択肢
+      SetMessage("魔王を倒し、","世界に平和が訪れた");
+      return;
+    }
     gCursor=0;
     gPhase=0;   //マップ移動フェーズ
     return;
