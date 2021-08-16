@@ -32,15 +32,17 @@ let gHP=START_HP;             //プレイヤーのHP
 let gMHP=START_HP;            //プレイヤーの最大HP
 let gLv=1;                    //プレイヤーのレベル
 let gCursor=0;                //カーソル位置
+let gEnemyHP;                 //敵HP
 let gEnemyType;               //敵種別
 let gFrame=0;                 //内部カウンタ
 let gHeight;                  //実画面の高さ
 let gWidth;                   //実画面の幅
+let gItem=0;                  //所持アイテム
 let gMessage1=null;           //表示メッセージ1
 let gMessage2=null;           //表示メッセージ2
 let gMoveX=0;                 //移動量X
 let gMoveY=0;                 //移動量Y
-let gItem=0;                  //所持アイテム
+let gOrder;                   //行動順
 let gPhase=0;                 //戦闘フェーズ
 let gImgBoss;                 //ラスボス画像
 let gImgMap;                  //マップ画像
@@ -96,17 +98,27 @@ const	gMap = [
 //戦闘行動処理
 function Action(){
 
-  gPhase++;//フェーズ経過
+  gPhase++;      //フェーズ経過
 
-  if(gPhase===3){
-    SetMessage(gMonsterName[gEnemyType]+'の攻撃！',999+' のダメージ！');
-    //gPhase=7;
+  if(((gPhase+gOrder)&1)===0){//敵の行動順の場合
+    const d=GetDamage(gEnemyType+2);
+    SetMessage(gMonsterName[gEnemyType]+'の攻撃！',d+' のダメージ！');
+    gHP-=d;      //プレイヤーのHP減少
+    if(gHP<=0){  //プレイヤーが死んだ場合
+      gPhase=7;  //死亡フェーズ
+
+    }
     return;
   }
 
+  //プレイヤーの行動順
   if(gCursor==0){//「戦う」選択肢
-    SetMessage("あなたの攻撃！",333+' のダメージ！');
-    gPhase=5;
+    const d=GetDamage(gLv+1);//攻撃ダメージ計算結果取得
+    SetMessage("あなたの攻撃！",d+' のダメージ！');
+    gEnemyHP-=d;
+    if(gEnemyHP<=0){
+      gPhase=5;      
+    }
     return;
   }
 
@@ -133,7 +145,8 @@ function AddExp(val){
 
 //敵出現処理
 function AppearEnemy(t){
-  gPhase=1;//敵出現フェーズ
+  gPhase=1;      //敵出現フェーズ
+  gEnemyHP=t*3+5;//敵HP
   gEnemyType=t;
   SetMessage("敵が現れた!",null);
 }
@@ -254,10 +267,16 @@ function DrawStatus(g){
 
   g.font=FONT;                     //文字フォント設定
   g.fillStyle=FONTSTYLE;           //文字色
-  g.fillText("Lv "+gLv,4,13);      //Lv
-  g.fillText("HP "+gHP,4,25);      //HP
-  g.fillText("Ex "+gEx,4,37);      //Ex
+  g.fillText("Lv",4,13); DrawTextR(g,gLv, 37,13)//Lv
+  g.fillText("HP",4,25); DrawTextR(g,gHP, 37,25)//HP
+  g.fillText("Ex",4,37); DrawTextR(g,gEx, 37,37)//Ex
 
+}
+
+function DrawTextR(g,str,x,y){
+  g.textAlign="right";
+  g.fillText(str,x,y);
+  g.textAlign="left";
 }
 
 function DrawTile(g,x,y,idx){
@@ -266,6 +285,11 @@ function DrawTile(g,x,y,idx){
   const iy=Math.floor(idx/TILECOLUMN)*TILESIZE;
   g.drawImage(gImgMap,ix,iy,TILESIZE,TILESIZE,x,y,TILESIZE,TILESIZE);//画像の縦*32,横*32
 
+}
+
+//ダメージ量算出
+function GetDamage(a){
+  return(Math.floor(a*(1+Math.random())));//攻撃力の1～2倍
 }
 
 function IsBoss(){
@@ -302,6 +326,10 @@ function Sign(val){
 //フィールド進行処理
 function TickField(){
   
+  if(gPhase!=0){
+    return;
+  }
+
   // if(gKey[16]){SCROLL=2;}
   if(gMoveX !=0 || gMoveY !=0 || gMessage1){}   //移動中またはメッセージ表示中の場合
   else if(gKey[37]){gAngle=1; gMoveX=-TILESIZE;}//左
@@ -356,8 +384,18 @@ function TickField(){
     if(m==15){//ボス 
       AppearEnemy(gMonsterName.length-1);
     }
-    if(Math.random()*4<gEncounter[m]){//ランダムエンカウント
-      AppearEnemy(0);
+    if(Math.random()*8<gEncounter[m]){//ランダムエンカウント
+      let t=Math.abs(gPlayerX/TILESIZE-START_X)+Math.abs(gPlayerY/TILESIZE-START_Y);
+      if(m===6){         //マップタイプが林だった場合
+        t+=8;            //敵レベルを0.5上昇
+      }
+      if(m===7){         //マップタイプが山だった場合
+        t+=16;           //敵レベルを1上昇
+      }
+      t+=Math.random()*8;//敵レベルを0～0.5上昇
+      t=Math.floor(t/16);
+      t=Math.min(t,gMonsterName.length-2);//上限処理
+      AppearEnemy(t);
     }
   }
 
@@ -407,8 +445,10 @@ function WmSize(){
 
 //タイマーイベント発生時の処理
 function WmTimer(){
-  gFrame++;//内部カウンタを加算
-  TickField();//フィールド進行処理
+  if(!gMessage1){
+    gFrame++;//内部カウンタを加算
+    TickField();//フィールド進行処理    
+  }
   WmPaint();
 }
 
@@ -432,6 +472,7 @@ window.onkeydown=function(ev){
   if(gPhase===2){//戦闘コマンド選択の場合
       
     if(cc===13||cc===90){//13はEnterキー、90はZキー
+      gOrder=Math.floor(Math.random()*2);//戦闘行動順
       Action();//戦闘行動処理
     }else{
       gCursor=1-gCursor;//カーソル移動
