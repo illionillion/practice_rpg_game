@@ -311,18 +311,6 @@ function SetMessage(v1,v2){
   gMessage2=v2;
 }
 
-//IE対応
-function Sign(val){
-  if(val==0){
-    return(0);
-  }
-  if(val<0){
-    return(-1);
-  }
-  return(1);
-
-}
-
 //フィールド進行処理
 function TickField(){
   
@@ -402,10 +390,10 @@ function TickField(){
 
 
   //signはIEでは動かない
-  gPlayerX+=Sign(gMoveX)*SCROLL;//プレーヤー座標移動X
-  gPlayerY+=Sign(gMoveY)*SCROLL;//プレーヤー座標移動Y
-  gMoveX-=Sign(gMoveX)*SCROLL;  //移動量消費X
-  gMoveY-=Sign(gMoveY)*SCROLL;  //移動量消費Y
+  gPlayerX+=TUG.Sign(gMoveX)*SCROLL;//プレーヤー座標移動X
+  gPlayerY+=TUG.Sign(gMoveY)*SCROLL;//プレーヤー座標移動Y
+  gMoveX-=TUG.Sign(gMoveX)*SCROLL;  //移動量消費X
+  gMoveY-=TUG.Sign(gMoveY)*SCROLL;  //移動量消費Y
 
   //マップループ処理
   gPlayerX+=(MAP_WIDTH*TILESIZE);
@@ -444,7 +432,7 @@ function WmSize(){
 }
 
 //タイマーイベント発生時の処理
-function WmTimer(){
+TUG.onTimer=function(){
   if(!gMessage1){
     gFrame++;//内部カウンタを加算
     TickField();//フィールド進行処理    
@@ -540,6 +528,5 @@ window.onload=function(){
   gScreen.height=HEIGHT;                   //仮想画面の高さを設定
   WmSize();                                //画面サイズ初期化
   window.addEventListener("resize",function(){WmSize()});//ブラウザサイズ変更時に読み込まれる
-  setInterval(function(){WmTimer()},INTERVAL);   //33ms間隔でWmTimer()を呼び出す。
-
+  TUG.init();
 }
