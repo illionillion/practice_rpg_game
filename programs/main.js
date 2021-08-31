@@ -50,7 +50,7 @@ let gImgMonster;              //モンスター画像
 let gImgPlayer;               //プレイヤー画像
 let gPlayerX=START_X*TILESIZE+TILESIZE/2;//プレイヤー座標X
 let gPlayerY=START_Y*TILESIZE+TILESIZE/2;//プレイヤー座標Y
-let gScreen;                  //仮想画面
+// let gScreen;                  //仮想画面
 
 const gFileBoss="img/boss.png";
 const gFileMap="img/map.png";
@@ -228,7 +228,7 @@ function DrawField(g){
 
 function DrawMain(){
 
-  const g=gScreen.getContext("2d");  //仮想画面の2D描画コンテキストを取得
+  const g=TUG.GR.mG;  //仮想画面の2D描画コンテキストを取得
   if(gPhase<=1){
     DrawField(g);                       //フィールド画面描画
   }else{
@@ -408,7 +408,7 @@ function WmPaint(){
   DrawMain();
   const ca=document.querySelector("#main");//mainキャンバス取得
   const g=ca.getContext("2d");             //2D描画コンテキストを取得
-  g.drawImage(gScreen,0,0,gScreen.width,gScreen.height,0,0,gWidth,gHeight);//仮想画面のイメージを実画面へ転送
+  g.drawImage(TUG.GR.mCanvas,0,0,TUG.GR.mCanvas.width,TUG.GR.mCanvas.height,0,0,gWidth,gHeight);//仮想画面のイメージを実画面へ転送
 }
 
 //ブラウザサイズ変更イベント
@@ -432,10 +432,13 @@ function WmSize(){
 }
 
 //タイマーイベント発生時の処理
-TUG.onTimer=function(){
+TUG.onTimer=function(d){
+
   if(!gMessage1){
-    gFrame++;//内部カウンタを加算
-    TickField();//フィールド進行処理    
+    while(d--){
+      gFrame++;   //内部カウンタを加算
+      TickField();//フィールド進行処理   
+    } 
   }
   WmPaint();
 }
@@ -523,9 +526,6 @@ window.onload=function(){
 
   LoadImage();
 
-  gScreen=document.createElement("canvas");//仮想画面を作成
-  gScreen.width=WIDTH;                     //仮想画面の幅を設定
-  gScreen.height=HEIGHT;                   //仮想画面の高さを設定
   WmSize();                                //画面サイズ初期化
   window.addEventListener("resize",function(){WmSize()});//ブラウザサイズ変更時に読み込まれる
   TUG.init();
